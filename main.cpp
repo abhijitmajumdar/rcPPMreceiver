@@ -9,11 +9,13 @@ int main(int argc, char **argv) {
 	setup();
 	while ( 1 )
 	{
+		long time = micros();
 		getData(values);
+		cout<<micros()-time<<"\n";
 		for(int i=0; i<nChannels;i++)
 			cout<<values[i]<<'\t';
 		cout<<"\n";
-		delay(100);
+		delay(20);
 	}
 	return 0;
 }

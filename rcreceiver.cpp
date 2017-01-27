@@ -1,10 +1,12 @@
 #include "rcreceiver.h"
 #include <iostream>
 #include <wiringPi.h>
+#define nMovingAverage 30
 
 static int lastTime = 0, dTime = 0;
 static int channel[nChannels];
-static int lastReadChannel[nChannels];
+static int lastReadChannel[nChannels][nMovingAverage];
+static int lastReadChannelIndexes[nChannels] = {0};
 static int counter = 0;
 
 void pinChange(void)
@@ -17,14 +19,13 @@ void pinChange(void)
 	else
 		if(counter<nChannels)
 		{
-			if((dTime > 2100) || (dTime <100))
-				channel[counter] = lastReadChannel[counter];
-			else
+			if((dTime < 2100) && (dTime > 100))
 			{
-				channel[counter] = (dTime+5*lastReadChannel[counter])/6;
-				lastReadChannel[counter] = channel[counter];
-				counter++;
+				lastReadChannel[counter][lastReadChannelIndexes[counter]++] = dTime;
+				if(lastReadChannelIndexes[counter] >= nMovingAverage)
+					lastReadChannelIndexes[counter] = 0;
 			}
+			counter++;
 		}
 }
 
@@ -36,6 +37,11 @@ void setup(void)
 
 void getData(int *vals)
 {
-	for(int i=0; i<nChannels;i++)
-		vals[i] = channel[i];
+	for(int j=0; j<nChannels;j++)
+	{
+		for(int i=0; i<nMovingAverage; i++)
+			channel[j] += lastReadChannel[j][i];
+		channel[j] /= nMovingAverage;
+		vals[j] = (6*vals[j]+channel[j])/7;
+	}
 }
